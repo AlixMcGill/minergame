@@ -112,7 +112,8 @@ public:
 
     enum TileType {
         TILE_AIR = 0,
-        TILE_STONE = 1
+        TILE_STONE = 1,
+        TILE_DIRT = 2
     };
 
     int& at(int x, int y) {
@@ -172,6 +173,27 @@ public:
         }
     }
 
+
+    void AddDirtPatches(float noiseScale = 0.08f, float threshold = 0.8f) {
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                int idx = y * width + x;
+                if (tiles[idx] == TILE_STONE) {
+                    float noiseVal = perlin.noise(x * noiseScale, y * noiseScale); // range -1..1
+                    
+                    // Normalize to 0..1
+                    float normalized = (noiseVal + 1.0f) / 2.0f;
+
+                    if (normalized > threshold) {
+                        tiles[idx] = TILE_DIRT;
+                    }
+                }
+            }
+        }
+    }
+
+
+
     void ClearTopRowsToAir(float scale = 0.04f) {
         for (int x = 0; x < width; x++) {
             float noiseVal = perlin.noise(x * scale, (float)generateRandomSeed());
@@ -185,24 +207,28 @@ public:
 
 
     void GenerateTerrain(float scale = 0.1f, float threshold = -0.8f) {
-        // Base Terrain Gen
+        // first gen 
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
-                // Get noise value at scaled coordinates
-                float noiseVal = perlin.noise(x * scale, y * scale); // range -1..1
-                
-                // Threshold noise to decide if tile is filled or empty
+                float noiseVal = perlin.noise(x * scale, y * scale); // -1..1
+                float dirtNoiseVal = perlin.noise(x * 0.01f, 0.05f * (float)(rand() % 2));
+                int dirtHeight = mapNoiseToRange(dirtNoiseVal, 3, dirtDepth);
+
                 if (noiseVal > threshold) {
-                    tiles[y * width + x] = TILE_STONE; // or 1
+                    // Stone or dirt depending on y
+                    if (y < dirtHeight) {
+                        tiles[y * width + x] = TILE_DIRT;
+                    } else {
+                        tiles[y * width + x] = TILE_STONE;
+                    }
                 } else {
-                    tiles[y * width + x] = TILE_AIR; // or 0
+                    tiles[y * width + x] = TILE_AIR;
                 }
             }
         }
-
         // Worming Terrain
         AddRandWorms(12, 30);
-
+        AddDirtPatches();
         ClearTopRowsToAir();
     }
 
@@ -222,6 +248,9 @@ public:
                 if (tile == TILE_STONE) {
                     DrawRectangle(tilePixelX - (int)camera.x, tilePixelY - (int)camera.y, tileSize, tileSize, GRAY);
                 }
+                if (tile == TILE_DIRT) {
+                    DrawRectangle(tilePixelX - (int)camera.x, tilePixelY - (int)camera.y, tileSize, tileSize, BROWN);
+                }
             }
         }
     }
@@ -233,6 +262,7 @@ private:
     PerlinNoise perlin;
     static constexpr int width = 200;
     static constexpr int height = 200;
+    static constexpr int dirtDepth = 80;
     std::vector<int> tiles;
 };
 
