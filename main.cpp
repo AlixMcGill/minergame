@@ -34,6 +34,11 @@ struct GameCamera {
     }
 };
 
+int mapNoiseToRange(float noiseValue, int min, int max) {
+    float normalized = (noiseValue + 1.0f) / 2.0f;
+    return static_cast<int>(normalized * (max - min)) + min;
+}
+
 
 
 unsigned int generateRandomSeed() {
@@ -114,9 +119,65 @@ public:
         return tiles[y * width + x];
     }
 
-    void ClearTopRowsToAir(int rows = 8) {
-        for (int y = 0; y < rows; ++y) {
-            for (int x = 0; x < width; ++x) {
+    
+    int MapYToRadius(float y, int minRadius, int maxRadius) {
+        float t = y / static_cast<float>(height); // top = 0.0, bottom = 1.0
+        return static_cast<int>(t * (maxRadius - minRadius)) + minRadius;
+    }
+
+    void AddPerlinWorm(int startX, int startY, int length, float noiseScale = 0.1f, int minRadius = 1, int maxRadius = 5) {
+        float posX = static_cast<float>(startX);
+        float posY = static_cast<float>(startY);
+
+        for (int i = 0; i < length; ++i) {
+            float angle = perlin.noise(posX * noiseScale, posY * noiseScale) * 2.0f * 3.14159f;
+
+            posX += cos(angle);
+            posY += sin(angle);
+
+            int centerX = static_cast<int>(posX);
+            int centerY = static_cast<int>(posY);
+
+            int radius = MapYToRadius(posY, minRadius, maxRadius);
+
+            for (int y = -radius; y <= radius; ++y) {
+                for (int x = -radius; x <= radius; ++x) {
+                    int nx = centerX + x;
+                    int ny = centerY + y;
+
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height && x*x + y*y <= radius*radius) {
+                        tiles[ny * width + nx] = TILE_AIR;
+                    }
+                }
+            }
+        }
+    }
+
+    void AddRandWorms(int minWorms = 4, int maxWorms = 12) {
+        if (maxWorms < minWorms) std::swap(minWorms, maxWorms); // Safety
+
+        int numWorms = minWorms + rand() % (maxWorms - minWorms + 1);
+
+        for (int i = 0; i < numWorms; ++i) {
+            int startX = 10 + rand() % (width - 20);
+            int startY = 10 + rand() % (height - 20);
+
+            int length = 100 + rand() % 100; // Worm length: 100–199
+            float scale = 0.05f + static_cast<float>(rand()) / RAND_MAX * 0.1f; // 0.05–0.15
+
+            int minRadius = 1;
+            int maxRadius = 4 + rand() % 3; // 4–6
+
+            AddPerlinWorm(startX, startY, length, scale, minRadius, maxRadius);
+        }
+    }
+
+    void ClearTopRowsToAir(float scale = 0.04f) {
+        for (int x = 0; x < width; x++) {
+            float noiseVal = perlin.noise(x * scale, (float)generateRandomSeed());
+            int clearHeight = mapNoiseToRange(noiseVal, 5, 15); // area that gets cleared
+                                                                //
+            for (int y = 0; y < clearHeight && y < height; y++) {
                 tiles[y * width + x] = TILE_AIR;
             }
         }
@@ -124,6 +185,7 @@ public:
 
 
     void GenerateTerrain(float scale = 0.1f, float threshold = -0.8f) {
+        // Base Terrain Gen
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
                 // Get noise value at scaled coordinates
@@ -137,6 +199,9 @@ public:
                 }
             }
         }
+
+        // Worming Terrain
+        AddRandWorms(12, 30);
 
         ClearTopRowsToAir();
     }
