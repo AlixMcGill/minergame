@@ -369,46 +369,48 @@ public:
         MoveY(vy * deltaTime, world);
     }
 
-    void MoveX(float dx, const World& world) {
-        x += dx;
-
-        if (IsColliding(world)) {
-            while (IsColliding(world) && dx != 0) {
-            if (dx > 0) {
-                x -= 0.1f;  // move left in small increments
-                dx -= 0.1f;
-            } else {
-                x += 0.1f;  // move right in small increments
-                dx += 0.1f;
-            }
-        }
-        }
-    }
-
     
-    void MoveY(float dy, const World& world) {
-        y += dy;
+   
+    void MoveX(float dx, const World& world) {
+        float sign = dx > 0 ? 1.0f : -1.0f;
+        float step = tileSize / 4.0f; // quarter tile steps
+        float moved = 0.0f;
 
-        if (IsColliding(world)) {
-            // Undo movement gradually until no collision
-            float step = (dy > 0) ? -0.1f : 0.1f;  // Move opposite direction in small steps
-            while (IsColliding(world) && std::abs(dy) > 0.0f) {
-                y += step;
-                dy += step;
-                if (std::abs(dy) < 0.01f) break;  // Avoid infinite loop on tiny values
+        while (std::abs(moved) < std::abs(dx)) {
+            float move = std::min(step, std::abs(dx - moved)) * sign;
+            x += move;
+            if (IsColliding(world)) {
+                x -= move;
+                vx = 0;
+                break;
             }
-
-            vy = 0;
-
-            if (dy < 0) {
-                isOnGround = false; // Moving up, no ground contact
-            } else {
-                isOnGround = true;  // Moving down and hit ground
-            }
-        } else {
-            isOnGround = false;
+            moved += move;
         }
     }
+        
+    void MoveY(float dy, const World& world) {
+        float sign = dy > 0 ? 1.0f : -1.0f;
+        float step = tileSize / 4.0f;
+        float moved = 0.0f;
+
+        while (std::abs(moved) < std::abs(dy)) {
+            float move = std::min(step, std::abs(dy - moved)) * sign;
+            y += move;
+            if (IsColliding(world)) {
+                y -= move;
+                vy = 0;
+
+                if (dy > 0)
+                    isOnGround = true;
+                return;
+            }
+            moved += move;
+        }
+
+        isOnGround = false;
+    }
+
+
 
     bool IsOnGroundWithTolerance(const World& world, float tolerance = 10.0f) const {
         // Check a small area just below the player's feet
@@ -570,7 +572,7 @@ private:
 
 int main() {
     InitWindow(windowWidth, windowHeight, "Miner Game");
-    SetTargetFPS(60);
+    SetTargetFPS(240);
 
     // Init world
     World world;
@@ -614,6 +616,8 @@ int main() {
         player.Draw(camDrawX, camDrawY); // optional: adjust for camera.x, camera.y
         editor.DrawHighlight();
         //RenderDebug(camera, player, world);
+        //
+        DrawFPS(10, 10);
 
         EndScissorMode();
         EndDrawing();
