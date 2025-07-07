@@ -1,3 +1,5 @@
+#include <iostream>
+#include <ostream>
 #include <raylib.h>
 #include <vector>
 #include <cmath>
@@ -5,34 +7,39 @@
 #include <algorithm>
 #include <random>
 
-int windowWidth = 800;
-int windowHeight = 800;
+int windowWidth = 1280;
+int windowHeight = 720;
 int gridSize = 32; // creates 25 x 25 grid with 800 x 800 screen
-int tileSize = windowWidth / gridSize;
+int tileSize = 25;
 
 struct GameCamera {
-    float x = 0;          // top-left pixel x of camera viewport
-    float y = 0;          // top-left pixel y of camera viewport
-    float speed = 1800.0f; // pixels per second
+    float x = 0;
+    float y = 0;
+    float speed = 1800.0f;
 
-    void Update(float deltaTime, int worldPixelWidth, int worldPixelHeight, int screenWidth, int screenHeight) {
-        // Move camera based on keys
-        if (IsKeyDown(KEY_W)) y -= speed * deltaTime;
-        if (IsKeyDown(KEY_S)) y += speed * deltaTime;
-        if (IsKeyDown(KEY_A)) x -= speed * deltaTime;
-        if (IsKeyDown(KEY_D)) x += speed * deltaTime;
+    int drawX = 0; // Integer-aligned position for rendering
+    int drawY = 0;
 
-        // Clamp camera inside world bounds
-        if (x < 0) x = 0;
-        if (y < 0) y = 0;
+    void Follow(float targetX, float targetY, float deltaTime, int screenWidth, int screenHeight, int worldPixelWidth, int worldPixelHeight) {
+        float targetCamX = floor(targetX - screenWidth / 2);
+        float targetCamY = floor(targetY - screenHeight / 2);
 
-        float maxX = worldPixelWidth - screenWidth;
-        float maxY = worldPixelHeight - screenHeight;
+        float lerpSpeed = 8.0f;
 
-        if (x > maxX) x = maxX > 0 ? maxX : 0;  // prevent negative if world smaller than screen
-        if (y > maxY) y = maxY > 0 ? maxY : 0;
+        x += (targetCamX - x) * lerpSpeed * deltaTime;
+        y += (targetCamY - y) * lerpSpeed * deltaTime;
+
+        // Clamp camera
+        x = std::clamp(x, 0.0f, std::max(0.0f, (float)(worldPixelWidth - screenWidth)));
+        y = std::clamp(y, 0.0f, std::max(0.0f, (float)(worldPixelHeight - screenHeight)));
+
+        // Snap for rendering
+        drawX = (int)floor(x);
+        drawY = (int)floor(y);
     }
 };
+
+
 
 int mapNoiseToRange(float noiseValue, int min, int max) {
     float normalized = (noiseValue + 1.0f) / 2.0f;
@@ -273,28 +280,43 @@ public:
         ClearTopRowsToAir();
     }
 
+    bool IsSolidTile(int tileX, int tileY) const {
+        if (tileX < 0 || tileY < 0 || tileX >= width || tileY >= height) return false;
+
+        int tile = tiles[tileY * width + tileX];
+        return tile == TILE_STONE || tile == TILE_DIRT;
+    }
+
     
-    void Render(const GameCamera& camera, int windowWidth, int windowHeight) {
+    
+    void Render(int camDrawX, int camDrawY, int windowWidth, int windowHeight) {
+        int camX = camDrawX;
+        int camY = camDrawY;
+
         for (int y = 0; y < height; ++y) {
             int tilePixelY = y * tileSize;
-            bool visibleY = (tilePixelY + tileSize) > camera.y && tilePixelY < camera.y + windowHeight;
+            bool visibleY = (tilePixelY + tileSize) > camY && tilePixelY < camY + windowHeight;
             if (!visibleY) continue;
 
             for (int x = 0; x < width; ++x) {
                 int tilePixelX = x * tileSize;
-                bool visibleX = (tilePixelX + tileSize) > camera.x && tilePixelX < camera.x + windowWidth;
+                bool visibleX = (tilePixelX + tileSize) > camX && tilePixelX < camX + windowWidth;
                 if (!visibleX) continue;
 
                 int tile = tiles[y * width + x];
                 if (tile == TILE_STONE) {
-                    DrawRectangle(tilePixelX - (int)camera.x, tilePixelY - (int)camera.y, tileSize, tileSize, GRAY);
+                    DrawRectangle((int)(tilePixelX - camX), (int)(tilePixelY - camY), tileSize, tileSize, GRAY);
+                    //DrawRectangleLines(tilePixelX - camX, tilePixelY - camY, tileSize, tileSize, RED); // debug border
                 }
-                if (tile == TILE_DIRT) {
-                    DrawRectangle(tilePixelX - (int)camera.x, tilePixelY - (int)camera.y, tileSize, tileSize, BROWN);
+                else if (tile == TILE_DIRT) {
+                    DrawRectangle((int)(tilePixelX - camX), (int)(tilePixelY - camY), tileSize, tileSize, BROWN);
+                    //DrawRectangleLines(tilePixelX - camX, tilePixelY - camY, tileSize, tileSize, RED); // debug border
                 }
             }
         }
     }
+
+
     int getWidth() const {return width;}
     int getHeight() const {return height;}
 
@@ -307,31 +329,296 @@ private:
     std::vector<int> tiles;
 };
 
+
+class Player {
+public:
+    float x = 0;
+    float y = 0;
+    float width = 24;
+    float height = 24;
+
+    float speed = 300.0f;
+    float vx = 0;
+    float vy = 0;
+
+    float gravity = 1200.0f;
+    float maxFallSpeed = 1200.0f;
+
+    bool isOnGround = false;
+
+    void Update(float deltaTime, const World& world) {
+        // Horizontal input
+        vx = 0;
+        if (IsKeyDown(KEY_A)) vx = -speed;
+        if (IsKeyDown(KEY_D)) vx = speed;
+
+        // Jump
+        if ((isOnGround || IsOnGroundWithTolerance(world)) && IsKeyPressed(KEY_SPACE)) {
+            vy = -600.0f;
+            isOnGround = false;
+        }
+
+        // Apply gravity
+        vy += gravity * deltaTime;
+        if (vy > maxFallSpeed) vy = maxFallSpeed;
+
+        // Horizontal movement and collision
+        MoveX(vx * deltaTime, world);
+
+        // Vertical movement and collision
+        MoveY(vy * deltaTime, world);
+    }
+
+    void MoveX(float dx, const World& world) {
+        x += dx;
+
+        if (IsColliding(world)) {
+            while (IsColliding(world) && dx != 0) {
+            if (dx > 0) {
+                x -= 0.1f;  // move left in small increments
+                dx -= 0.1f;
+            } else {
+                x += 0.1f;  // move right in small increments
+                dx += 0.1f;
+            }
+        }
+        }
+    }
+
+    
+    void MoveY(float dy, const World& world) {
+        y += dy;
+
+        if (IsColliding(world)) {
+            // Undo movement gradually until no collision
+            float step = (dy > 0) ? -0.1f : 0.1f;  // Move opposite direction in small steps
+            while (IsColliding(world) && std::abs(dy) > 0.0f) {
+                y += step;
+                dy += step;
+                if (std::abs(dy) < 0.01f) break;  // Avoid infinite loop on tiny values
+            }
+
+            vy = 0;
+
+            if (dy < 0) {
+                isOnGround = false; // Moving up, no ground contact
+            } else {
+                isOnGround = true;  // Moving down and hit ground
+            }
+        } else {
+            isOnGround = false;
+        }
+    }
+
+    bool IsOnGroundWithTolerance(const World& world, float tolerance = 10.0f) const {
+        // Check a small area just below the player's feet
+        return IsCollidingAt(x, y + height + tolerance, width, 0.1f, world);
+    }
+
+    bool IsCollidingAt(float px, float py, float w, float h, const World& world) const {
+        int tileX0 = (int)floor(px / tileSize);
+        int tileY0 = (int)floor(py / tileSize);
+        int tileX1 = (int)floor((px + w - 0.01f) / tileSize);
+        int tileY1 = (int)floor((py + h - 0.01f) / tileSize);
+
+        for (int ty = tileY0; ty <= tileY1; ++ty) {
+            for (int tx = tileX0; tx <= tileX1; ++tx) {
+                if (world.IsSolidTile(tx, ty)) return true;
+            }
+        }
+        return false;
+    }
+
+
+    bool IsColliding(const World& world) const {
+        // Convert player bounding box to tile range
+        int tileX0 = (int)floor(x / tileSize);
+        int tileY0 = (int)floor(y / tileSize);
+        int tileX1 = (int)floor((x + width) / tileSize);
+        int tileY1 = (int)floor((y + height) / tileSize);
+
+        for (int ty = tileY0; ty <= tileY1; ++ty) {
+            for (int tx = tileX0; tx <= tileX1; ++tx) {
+                if (world.IsSolidTile(tx, ty)) {
+                    //std::cout << "Colliding with tile at ("<< tx <<", "<< ty <<")" << " Size : " << tileSize << std::endl;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    bool IsCollidingAt(float px, float py, float w, float h, const World& world) {
+        int tileX0 = (int)floor(px / tileSize);
+        int tileY0 = (int)floor(py / tileSize);
+        int tileX1 = (int)floor((px + w - 0.01f) / tileSize);
+        int tileY1 = (int)floor((py + h - 0.01f) / tileSize);
+
+        for (int ty = tileY0; ty <= tileY1; ++ty) {
+            for (int tx = tileX0; tx <= tileX1; ++tx) {
+                if (world.IsSolidTile(tx, ty)) return true;
+            }
+        }
+        return false;
+    }
+
+
+
+    void Draw(int camDrawX, int camDrawY) const {
+        DrawRectangle((int)(x - camDrawX), (int)(y - camDrawY), (int)width, (int)height, RED);
+    }
+
+    void DebugDrawBounds(const GameCamera& cam) const {
+        DrawRectangleLines(
+            (int)(x - cam.x),
+            (int)(y - cam.y),
+            (int)width,
+            (int)height,
+            GREEN
+        );
+    }
+
+};
+
+void RenderDebug(const GameCamera& camera, const Player& player, const World& world) {
+    // Draw tiles around the player
+    int startX = (int)floor(player.x / tileSize) - 2;
+    int endX = startX + 5;
+    int startY = (int)floor(player.y / tileSize) - 2;
+    int endY = startY + 5;
+
+    for (int y = startY; y <= endY; y++) {
+        for (int x = startX; x <= endX; x++) {
+            if (world.IsSolidTile(x, y)) {
+                DrawRectangle(
+                    x * tileSize - (int)camera.x,
+                    y * tileSize - (int)camera.y,
+                    tileSize,
+                    tileSize,
+                    Fade(GRAY, 0.3f)
+                );
+            }
+        }
+    }
+
+    // Draw player collision bounds
+    player.DebugDrawBounds(camera);
+}
+
+
+
+class BlockEditor {
+public:
+    BlockEditor(World& world, const GameCamera& camera)
+        : world(world), camera(camera) {}
+
+    void Update() {
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            int tileX, tileY;
+            if (GetHoveredTile(tileX, tileY)) {
+                if (tileX >= 0 && tileX < world.getWidth() &&
+                    tileY >= 0 && tileY < world.getHeight()) {
+                    world.at(tileX, tileY) = World::TILE_AIR;
+                }
+            }
+        }
+    }
+
+    void DrawHighlight() const {
+        int tileX, tileY;
+        if (GetHoveredTile(tileX, tileY)) {
+            if (world.IsSolidTile(tileX, tileY)) {
+                DrawRectangle(
+                    tileX * tileSize - camera.drawX,
+                    tileY * tileSize - camera.drawY,
+                    tileSize,
+                    tileSize,
+                    Fade(YELLOW, 0.3f)
+                );
+
+                DrawRectangleLines(
+                    tileX * tileSize - camera.drawX,
+                    tileY * tileSize - camera.drawY,
+                    tileSize,
+                    tileSize,
+                    YELLOW
+                );
+            }
+        }
+    }
+
+private:
+    World& world;
+    const GameCamera& camera;
+
+    bool GetHoveredTile(int& outTileX, int& outTileY) const {
+        Vector2 mouse = GetMousePosition();
+
+        // Convert from screen space to world space
+        float worldX = mouse.x + camera.drawX;
+        float worldY = mouse.y + camera.drawY;
+
+        outTileX = (int)(worldX / tileSize);
+        outTileY = (int)(worldY / tileSize);
+
+        return true;
+    }
+};
+
+
+
+
 int main() {
     InitWindow(windowWidth, windowHeight, "Miner Game");
     SetTargetFPS(60);
 
-    // init
+    // Init world
     World world;
     world.GenerateTerrain();
 
+    // Init player
+    Player player;
+    player.x = 200; // Starting position (adjust as needed)
+    player.y = 200;
+
+    // Init camera
     GameCamera camera;
     const int worldPixelWidth = world.getWidth() * tileSize;
     const int worldPixelHeight = world.getHeight() * tileSize;
 
-    while (!WindowShouldClose()) { // Game Loop
+    // Init Block Editor
+    BlockEditor editor(world, camera);
+
+    while (!WindowShouldClose()) {
         float deltaTime = GetFrameTime();
 
-        camera.Update(deltaTime, worldPixelWidth, worldPixelHeight, GetScreenWidth(), GetScreenHeight());
+        editor.Update();
+        // Update player
+        player.Update(deltaTime, world);
 
+        // Camera follows player
+        camera.Follow(floorf(player.x), floorf(player.y), deltaTime, GetScreenWidth(), GetScreenHeight(), worldPixelWidth, worldPixelHeight);
+        int camDrawX = (int)floor(camera.x);
+        int camDrawY = (int)floor(camera.y);
+        //std::cout << "camDrawX: " << camDrawX << " camDrawY: " << camDrawY << std::endl;
+
+        
+        // Draw
         BeginDrawing();
-
         ClearBackground(BLUE);
 
-        world.Render(camera, GetScreenWidth(), GetScreenHeight());
+        // Set camera offset
+        BeginScissorMode(0, 0, GetScreenWidth(), GetScreenHeight());
 
+        world.Render(camDrawX, camDrawY, GetScreenWidth(), GetScreenHeight());
+        player.Draw(camDrawX, camDrawY); // optional: adjust for camera.x, camera.y
+        editor.DrawHighlight();
+        //RenderDebug(camera, player, world);
+
+        EndScissorMode();
         EndDrawing();
     }
 
     CloseWindow();
 }
+
