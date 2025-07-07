@@ -13,7 +13,7 @@ int tileSize = windowWidth / gridSize;
 struct GameCamera {
     float x = 0;          // top-left pixel x of camera viewport
     float y = 0;          // top-left pixel y of camera viewport
-    float speed = 800.0f; // pixels per second
+    float speed = 1800.0f; // pixels per second
 
     void Update(float deltaTime, int worldPixelWidth, int worldPixelHeight, int screenWidth, int screenHeight) {
         // Move camera based on keys
@@ -192,40 +192,81 @@ public:
         }
     }
 
+    void ClearTopRowsToAir(float scale = 0.01f) {
+        float bandScale = 0.03f; // controls horizontal banding scale
 
-
-    void ClearTopRowsToAir(float scale = 0.04f) {
         for (int x = 0; x < width; x++) {
-            float noiseVal = perlin.noise(x * scale, (float)generateRandomSeed());
-            int clearHeight = mapNoiseToRange(noiseVal, 5, 15); // area that gets cleared
-                                                                //
+            // Base noise for clear height
+            float noiseVal = perlin.noise(x * scale, 0.01f * (float)(rand() % 2));
+            int clearHeight = mapNoiseToRange(noiseVal, 20, 50);
+
+            // Second pass horizontal band noise to modify clearHeight
+            float xBandNoise = perlin.noise(x * bandScale, 0.0f);
+            // Modify clearHeight by ±10% depending on horizontal noise
+            int bandOffset = (int)((xBandNoise - 0.5f) * 20); 
+
+            clearHeight += bandOffset;
+            if (clearHeight < 0) clearHeight = 0;
+            if (clearHeight > height) clearHeight = height;
+
             for (int y = 0; y < clearHeight && y < height; y++) {
                 tiles[y * width + x] = TILE_AIR;
             }
         }
     }
 
+    void InitBasicGen(float scale = 0.06f, float threshold = -1.5f) {
+        int octaves = 5;
 
-    void GenerateTerrain(float scale = 0.1f, float threshold = -0.8f) {
-        // first gen 
         for (int y = 0; y < height; ++y) {
+            float yFactor = (float)y / (float)height;
+            float surfaceFactor = 1.0f + yFactor;           // 1 at top, 0 at bottom
+            float airBias = pow(surfaceFactor, 2.0f);       // more effect near surface
+            float adjustedThreshold = threshold + airBias * 0.5f;  // increase threshold near surface
+
             for (int x = 0; x < width; ++x) {
-                float noiseVal = perlin.noise(x * scale, y * scale); // -1..1
+                float noiseVal = 0.0f;
+                float frequency = scale;
+                float amplitude = 1.0f;
+                float maxAmplitude = -1.5f;
+
+                for (int o = 0; o < octaves; ++o) {
+                    float nx = x * frequency;
+                    float ny = y * frequency;
+                    float layerNoise = perlin.noise(nx, ny) * amplitude;
+                    noiseVal += layerNoise;
+                    maxAmplitude += amplitude;
+
+                    frequency *= 2.0f;
+                    amplitude *= 0.5f;
+                }
+
+                if (maxAmplitude > 0.0f)
+                    noiseVal /= maxAmplitude;
+
                 float dirtNoiseVal = perlin.noise(x * 0.01f, 0.05f * (float)(rand() % 2));
                 int dirtHeight = mapNoiseToRange(dirtNoiseVal, 3, dirtDepth);
-
-                if (noiseVal > threshold) {
-                    // Stone or dirt depending on y
+                if (noiseVal > adjustedThreshold) {
                     if (y < dirtHeight) {
                         tiles[y * width + x] = TILE_DIRT;
                     } else {
                         tiles[y * width + x] = TILE_STONE;
                     }
                 } else {
-                    tiles[y * width + x] = TILE_AIR;
+                    tiles[y * width + x] = TILE_AIR;  // more likely near top
+                }
+                float dirtNoiseVal2 = perlin.noise(x * 0.2f, 0.05f * (float)(rand() % 2));
+                int dirtHeight2 = mapNoiseToRange(dirtNoiseVal2, 30, 40);
+                if (y < dirtHeight2) {
+                    tiles[y * width + x] = TILE_DIRT;
                 }
             }
         }
+    }
+
+
+    void GenerateTerrain() {
+        InitBasicGen();
         // Worming Terrain
         AddRandWorms(12, 30);
         AddDirtPatches();
@@ -260,8 +301,8 @@ public:
 
 private:
     PerlinNoise perlin;
-    static constexpr int width = 200;
-    static constexpr int height = 200;
+    static constexpr int width = 800;
+    static constexpr int height = 500;
     static constexpr int dirtDepth = 80;
     std::vector<int> tiles;
 };
