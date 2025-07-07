@@ -10,7 +10,7 @@
 int windowWidth = 1280;
 int windowHeight = 720;
 int gridSize = 32; // creates 25 x 25 grid with 800 x 800 screen
-int tileSize = 25;
+int tileSize = 25; // original 25
 
 struct GameCamera {
     float x = 0;
@@ -53,6 +53,11 @@ unsigned int generateRandomSeed() {
     std::mt19937 gen(rd());                   // Mersenne Twister engine seeded by rd
     std::uniform_int_distribution<unsigned int> dist(0, UINT32_MAX);
     return dist(gen);
+}
+
+double findDistance(int x1, int y1, int x2, int y2) {
+    double d2 = pow(x2 - x1, 2) + pow(y2 - y1, 2);
+    return sqrt(d2);
 }
 
 class PerlinNoise {
@@ -334,8 +339,8 @@ class Player {
 public:
     float x = 0;
     float y = 0;
-    float width = 24;
-    float height = 24;
+    float width = 22;
+    float height = 44;
 
     float speed = 300.0f;
     float vx = 0;
@@ -514,37 +519,42 @@ public:
     BlockEditor(World& world, const GameCamera& camera)
         : world(world), camera(camera) {}
 
-    void Update() {
+    void Update(Player& player) {
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             int tileX, tileY;
             if (GetHoveredTile(tileX, tileY)) {
+                double dist = findDistance(tileX, tileY, player.x / tileSize, player.y / tileSize);
+                if (dist <= blockReach) {
                 if (tileX >= 0 && tileX < world.getWidth() &&
                     tileY >= 0 && tileY < world.getHeight()) {
                     world.at(tileX, tileY) = World::TILE_AIR;
-                }
+                }}
             }
         }
     }
 
-    void DrawHighlight() const {
+    void DrawHighlight(Player& player) const {
         int tileX, tileY;
         if (GetHoveredTile(tileX, tileY)) {
-            if (world.IsSolidTile(tileX, tileY)) {
-                DrawRectangle(
-                    tileX * tileSize - camera.drawX,
-                    tileY * tileSize - camera.drawY,
-                    tileSize,
-                    tileSize,
-                    Fade(YELLOW, 0.3f)
-                );
+            double dist = findDistance(tileX, tileY, player.x / tileSize, player.y / tileSize);
+            if (dist <= blockReach) {
+                if (world.IsSolidTile(tileX, tileY)) {
+                    DrawRectangle(
+                        tileX * tileSize - camera.drawX,
+                        tileY * tileSize - camera.drawY,
+                        tileSize,
+                        tileSize,
+                        Fade(YELLOW, 0.3f)
+                    );
 
-                DrawRectangleLines(
-                    tileX * tileSize - camera.drawX,
-                    tileY * tileSize - camera.drawY,
-                    tileSize,
-                    tileSize,
-                    YELLOW
-                );
+                    DrawRectangleLines(
+                        tileX * tileSize - camera.drawX,
+                        tileY * tileSize - camera.drawY,
+                        tileSize,
+                        tileSize,
+                        YELLOW
+                    );
+                }
             }
         }
     }
@@ -552,6 +562,7 @@ public:
 private:
     World& world;
     const GameCamera& camera;
+    int blockReach = 5;
 
     bool GetHoveredTile(int& outTileX, int& outTileY) const {
         Vector2 mouse = GetMousePosition();
@@ -594,9 +605,9 @@ int main() {
     while (!WindowShouldClose()) {
         float deltaTime = GetFrameTime();
 
-        editor.Update();
         // Update player
         player.Update(deltaTime, world);
+        editor.Update(player);
 
         // Camera follows player
         camera.Follow(floorf(player.x), floorf(player.y), deltaTime, GetScreenWidth(), GetScreenHeight(), worldPixelWidth, worldPixelHeight);
@@ -614,7 +625,7 @@ int main() {
 
         world.Render(camDrawX, camDrawY, GetScreenWidth(), GetScreenHeight());
         player.Draw(camDrawX, camDrawY); // optional: adjust for camera.x, camera.y
-        editor.DrawHighlight();
+        editor.DrawHighlight(player);
         //RenderDebug(camera, player, world);
         //
         DrawFPS(10, 10);
