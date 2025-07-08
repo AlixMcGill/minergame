@@ -1,20 +1,31 @@
+
 # Compiler and flags
 CXX := g++
-CXXFLAGS := -Wall -std=c++17
+CXXFLAGS := -Wall -std=c++17 -Isrc
 
-# Files and directories
-SRC := main.cpp
-TARGET := build/main
+# Directories
+SRC_DIR := src
+BUILD_DIR := build
+
+# Source and object files
+SRCS := $(shell find $(SRC_DIR) -name "*.cpp")
+OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRCS))
+
+TARGET := $(BUILD_DIR)/main
 LIBS := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
 # Default rule
 all: $(TARGET)
 
-$(TARGET): $(SRC)
-	@mkdir -p build
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SRC) $(LIBS)
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+
+# Build .o files from .cpp
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Clean rule
 clean:
-	rm -rf build
+	rm -rf $(BUILD_DIR)
 
