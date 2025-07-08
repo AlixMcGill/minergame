@@ -4,9 +4,7 @@ Game::Game()
     : editor(world, camera) // initialize editor
 {
     world.GenerateTerrain();
-
-    player.x = 200;
-    player.y = 200;
+    player.Init();
 
     worldPixelWidth = world.getWidth() * tileSize;
     worldPixelHeight = world.getHeight() * tileSize;

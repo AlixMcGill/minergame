@@ -6,7 +6,19 @@
 
 extern int tileSize;
 
+void Player::Init() {
+    x = spawnX;
+    y = spawnY;
+}
+
 void Player::Update(float deltaTime, const World& world) {
+    if (isDead && IsKeyPressed(KEY_R)) {
+        Respawn();
+    } else if (isDead) {
+        return; // causes all player updates to not function must be at top
+    }
+    if (IsKeyPressed(KEY_R)) Respawn(); // For Testing Only
+    
     vx = 0;
     if (IsKeyDown(KEY_A)) vx = -speed;
     if (IsKeyDown(KEY_D)) vx = speed;
@@ -21,6 +33,7 @@ void Player::Update(float deltaTime, const World& world) {
 
     MoveX(vx * deltaTime, world);
     MoveY(vy * deltaTime, world);
+
 }
 
 void Player::MoveX(float dx, const World& world) {
@@ -56,6 +69,7 @@ void Player::MoveY(float dy, const World& world) {
             // Fall Damage
             if (dy > 0 && preCollisionVy > safeFallSpeed) {
                 int damage = static_cast<int>((preCollisionVy - safeFallSpeed) * fallSpeedDamageScale);
+                if (preCollisionVy > (safeFallSpeed * 2)) damage = maxHealth;
                 TakeDamage(damage);
             }
 
@@ -72,7 +86,18 @@ void Player::MoveY(float dy, const World& world) {
 
 void Player::TakeDamage(int damage) {
     health -= damage;
-    if (health < 0) health = 0;
+    if (health <= 0) {
+        health = 0;
+        isDead = true;
+    }
+}
+
+void Player::Respawn() {
+    Init();
+    vx = vy = 0;
+    isDead = false;
+    isOnGround = false;
+    health = 100;
 }
 
 bool Player::IsOnGroundWithTolerance(const World& world, float tolerance) const {
@@ -119,6 +144,13 @@ void Player::DrawUI() {
     DrawRectangle(hBarX, hBarY, (int)(barWidth * healthPercent), barHeight, RED); // Health
     DrawRectangleLines(hBarX, hBarY, barWidth, barHeight, BLACK); // border
     DrawText(TextFormat("HP: %d / %d", health, maxHealth), hBarX + (barWidth / 4), hBarY + (barHeight / 5), 14, WHITE);
+
+
+
+    // Death Screen
+    if (isDead) {
+        DrawText("You died! Press R to respawn.", GetScreenWidth() / 2 - 100, GetScreenHeight() / 3, 20, RED);
+    }
 }
 
 void Player::DebugDrawBounds(const GameCamera& cam) const {
