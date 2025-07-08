@@ -2,6 +2,7 @@
 #include "player.hpp"
 #include <cmath>
 #include <algorithm>
+#include <raylib.h>
 
 extern int tileSize;
 
@@ -44,11 +45,20 @@ void Player::MoveY(float dy, const World& world) {
     float step = tileSize / 4.0f;
     float moved = 0.0f;
 
+    float preCollisionVy = vy;
+
     while (std::abs(moved) < std::abs(dy)) {
         float move = std::min(step, std::abs(dy - moved)) * sign;
         y += move;
         if (IsColliding(world)) {
             y -= move;
+
+            // Fall Damage
+            if (dy > 0 && preCollisionVy > safeFallSpeed) {
+                int damage = static_cast<int>((preCollisionVy - safeFallSpeed) * fallSpeedDamageScale);
+                TakeDamage(damage);
+            }
+
             vy = 0;
             if (dy > 0)
                 isOnGround = true;
@@ -58,6 +68,11 @@ void Player::MoveY(float dy, const World& world) {
     }
 
     isOnGround = false;
+}
+
+void Player::TakeDamage(int damage) {
+    health -= damage;
+    if (health < 0) health = 0;
 }
 
 bool Player::IsOnGroundWithTolerance(const World& world, float tolerance) const {
@@ -84,6 +99,26 @@ bool Player::IsColliding(const World& world) const {
 
 void Player::Draw(int camDrawX, int camDrawY) const {
     DrawRectangle((int)(x - camDrawX), (int)(y - camDrawY), (int)width, (int)height, RED);
+}
+
+void Player::DrawUI() {
+    const int barWidth = 200;
+    const int barHeight = 20;
+    const int margin = 20;
+
+    int sw = GetScreenWidth();
+    //int sh = GetScreenHeight();
+
+    // top right position
+    int hBarX = sw - barWidth - margin;
+    int hBarY = margin;
+
+    // Health Bar
+    float healthPercent = (float)health / maxHealth;
+    DrawRectangle(hBarX, hBarY, barWidth, barHeight, DARKGRAY); // background
+    DrawRectangle(hBarX, hBarY, (int)(barWidth * healthPercent), barHeight, RED); // Health
+    DrawRectangleLines(hBarX, hBarY, barWidth, barHeight, BLACK); // border
+    DrawText(TextFormat("HP: %d / %d", health, maxHealth), hBarX + (barWidth / 4), hBarY + (barHeight / 5), 14, WHITE);
 }
 
 void Player::DebugDrawBounds(const GameCamera& cam) const {

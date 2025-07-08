@@ -34,5 +34,8 @@ void Game::Draw() {
     world.Render(camDrawX, camDrawY, GetScreenWidth(), GetScreenHeight());
     player.Draw(camDrawX, camDrawY);
     editor.DrawHighlight(player);
+
+    // UI
+    player.DrawUI();
 }
 
