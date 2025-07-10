@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include <raylib.h>
 
 int mapNoiseToRange(float noiseValue, int min, int max) {
     float normalized = (noiseValue + 1.0f) / 2.0f;
@@ -17,3 +18,6 @@ double findDistance(int x1, int y1, int x2, int y2) {
     return std::sqrt(d2);
 }
 
+Vector2 diffVector(int x1, int y1, int x2, int y2) {
+    return {(float)(x2 - x1), (float)(y2 - y1)};
+}

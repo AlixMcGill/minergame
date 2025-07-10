@@ -28,6 +28,11 @@ public:
 
     bool isOnGround = false;
 
+    int itemPickupDistance = 100; // distance to when the item starts to move toward the player
+    int itemGrabDistance = 30; // distance to when the item moves into player inventory
+    int itemInventory = 0;
+    int itemMaxInventory = 100;
+
     void Init();
     void Update(float deltaTime, const World& world);
     void MoveX(float dx, const World& world);

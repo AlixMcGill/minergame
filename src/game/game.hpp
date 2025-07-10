@@ -5,6 +5,7 @@
 #include "../util/globals.hpp"
 #include "../player/blockEditor.hpp"
 #include "../player/camera.hpp"
+#include "itemManager.hpp"
 
 class Game {
 public:
@@ -17,6 +18,7 @@ private:
     Player player;
     GameCamera camera;
     BlockEditor editor;
+    ItemManager itemManager;
 
     int worldPixelWidth;
     int worldPixelHeight;

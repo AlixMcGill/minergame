@@ -32,6 +32,7 @@ public:
 
     int getWidth() const;
     int getHeight() const;
+    int GetTileAtWorldPixel(float worldX, float worldY) const;
 
 private:
     int MapYToRadius(float y, int minRadius, int maxRadius);

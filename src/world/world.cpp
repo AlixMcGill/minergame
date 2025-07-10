@@ -193,3 +193,14 @@ void World::Render(int camDrawX, int camDrawY, int windowWidth, int windowHeight
 int World::getWidth() const { return width; }
 int World::getHeight() const { return height; }
 
+int World::GetTileAtWorldPixel(float worldX, float worldY) const {
+    int tileX = static_cast<int>(worldX) / tileSize;
+    int tileY = static_cast<int>(worldY) / tileSize;
+
+    if (tileX < 0 || tileY < 0 || tileX >= width || tileY >= height) {
+        return -1; // or TILE_AIR if you want a default
+    }
+
+    return tiles[tileY * width + tileX];
+}
+

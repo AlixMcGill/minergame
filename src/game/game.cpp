@@ -12,7 +12,8 @@ Game::Game()
 
 void Game::Update(float deltaTime) {
     player.Update(deltaTime, world);
-    editor.Update(player);
+    editor.Update(player, itemManager);
+    itemManager.Update(deltaTime, world, player);
 
     camera.Follow(
         floorf(player.x),
@@ -31,6 +32,7 @@ void Game::Draw() {
 
     world.Render(camDrawX, camDrawY, GetScreenWidth(), GetScreenHeight());
     player.Draw(camDrawX, camDrawY);
+    itemManager.Render(camDrawX, camDrawY);
     editor.DrawHighlight(player);
 
     // UI
