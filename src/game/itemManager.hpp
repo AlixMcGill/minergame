@@ -12,7 +12,7 @@ public:
 
     void CreateDroppedItem(const char* name, float x, float y, Item::ItemRenderType textrue);
     void Update(float deltaTime, World& world, Player& player);
-    void Render(float camX, float camY);
+    void Render(float camX, float camY, TextureManager& textureManager);
 private:
     void PickupItem(Item& item, Player& player);
 };

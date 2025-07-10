@@ -14,16 +14,8 @@ void Item::UpdateDropped(float deltaTime, World& world, Player& player) {
     ApplyFriction(deltaTime);
 }
 
-void Item::RenderDropped(float camDrawX, float camDrawY) {
-    int offset = 2;
-    if (texture == BLOCK_DIRT) {
-        DrawRectangle((int)(xPos - camDrawX) - offset, (int)(yPos- camDrawY) + offset, (int)size, (int)size, BLACK);
-        DrawRectangle((int)(xPos - camDrawX), (int)(yPos - camDrawY), (int)size, (int)size, BROWN);
-    }
-    if (texture == BLOCK_STONE) {
-        DrawRectangle((int)(xPos - camDrawX) - offset, (int)(yPos- camDrawY) + offset, (int)size, (int)size, BLACK);
-        DrawRectangle((int)(xPos - camDrawX), (int)(yPos - camDrawY), (int)size, (int)size, GRAY);
-    }
+void Item::RenderDropped(float camDrawX, float camDrawY, TextureManager& textureManager) {
+    textureManager.ItemTextureManager(texture, camDrawX, camDrawY, xPos, yPos, size);
 }
 
 bool Item::IsCollidingAt(float px, float py, float w, float h, const World& world) const {
@@ -80,7 +72,7 @@ void Item::MoveY(float dy, const World& world) {
 
 void Item::MoveDroppedTowardPlayer(float deltaTime, Player& player) {
     float moveSpeed = 0.2;
-    distanceToPlayer = findDistance(player.x + (int)(tileSize / 2), player.y + tileSize, xPos, yPos);
+    distanceToPlayer = findDistance(player.x + (tileSize / 2), player.y + tileSize, xPos, yPos);
     Vector2 diff = diffVector(player.x, player.y, xPos, yPos);
 
     if (distanceToPlayer <= player.itemPickupDistance) {

@@ -3,14 +3,20 @@
 #include <cmath>
 #include <algorithm>
 #include <cstdlib>
+#include <raylib.h>
 #include "../util/perlin.hpp"
 #include "../util/utils.hpp"
 #include "../util/globals.hpp"
+#include "textureManager.hpp"
 
 // You need to define this in one .cpp file
 //int tileSize = 16;
 
-World::World() :  perlin(generateRandomSeed()), tiles(width * height, 0) {}
+World::World() :  perlin(generateRandomSeed()), tiles(width * height, 0) {
+}
+
+World::~World() {
+}
 
 int& World::at(int x, int y) {
     return tiles[y * width + x];
@@ -166,7 +172,7 @@ bool World::IsSolidTile(int tileX, int tileY) const {
     return tile == TILE_STONE || tile == TILE_DIRT;
 }
 
-void World::Render(int camDrawX, int camDrawY, int windowWidth, int windowHeight) {
+void World::Render(int camDrawX, int camDrawY, int windowWidth, int windowHeight, TextureManager& textureManager) {
     int camX = camDrawX;
     int camY = camDrawY;
 
@@ -179,13 +185,7 @@ void World::Render(int camDrawX, int camDrawY, int windowWidth, int windowHeight
             if ((tilePixelX + tileSize) <= camX || tilePixelX >= camX + windowWidth) continue;
 
             int tile = tiles[y * width + x];
-            Color color;
-            switch (tile) {
-                case TILE_STONE: color = GRAY; break;
-                case TILE_DIRT:  color = BROWN; break;
-                default:         continue;
-            }
-            DrawRectangle(tilePixelX - camX, tilePixelY - camY, tileSize, tileSize, color);
+            textureManager.WorldTextureManager(tile, camX, camY, tilePixelX, tilePixelY);
         }
     }
 }

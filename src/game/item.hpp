@@ -46,7 +46,7 @@ public:
     void MoveY(float dy, const World& world);
     
     void UpdateDropped(float deltaTime, World& world, Player& player);
-    void RenderDropped(float x, float y);
+    void RenderDropped(float x, float y, TextureManager& textureManager);
 private:
     void MoveDroppedTowardPlayer(float deltaTime, Player& player);
     void ApplyFriction(float deltaTime);

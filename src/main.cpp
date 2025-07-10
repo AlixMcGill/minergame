@@ -23,7 +23,7 @@ int main() {
         DrawFPS(10, 10);
         EndDrawing();
     }
-
+    game.Destroy();
     CloseWindow();
     return 0;
 }

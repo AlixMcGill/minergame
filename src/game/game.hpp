@@ -2,6 +2,7 @@
 
 #include "../player/player.hpp"
 #include "../world/world.hpp"
+#include "../world/textureManager.hpp"
 #include "../util/globals.hpp"
 #include "../player/blockEditor.hpp"
 #include "../player/camera.hpp"
@@ -12,6 +13,7 @@ public:
     Game();
     void Update(float deltaTime);
     void Draw();
+    void Destroy();
 
 private:
     World world;
@@ -19,6 +21,7 @@ private:
     GameCamera camera;
     BlockEditor editor;
     ItemManager itemManager;
+    TextureManager textrueManager;
 
     int worldPixelWidth;
     int worldPixelHeight;

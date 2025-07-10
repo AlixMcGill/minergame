@@ -3,6 +3,7 @@
 #include <vector>
 #include <raylib.h>
 #include "../util/perlin.hpp"
+#include "textureManager.hpp"
 
 // You may want to extern tileSize if used outside World
 extern int tileSize;
@@ -16,6 +17,7 @@ public:
     };
 
     World();
+    ~World();
 
     int& at(int x, int y);
 
@@ -28,7 +30,7 @@ public:
 
     bool IsSolidTile(int tileX, int tileY) const;
 
-    void Render(int camDrawX, int camDrawY, int windowWidth, int windowHeight);
+    void Render(int camDrawX, int camDrawY, int windowWidth, int windowHeight, TextureManager& textureManager);
 
     int getWidth() const;
     int getHeight() const;
@@ -42,5 +44,8 @@ private:
     static constexpr int height = 500;
     static constexpr int dirtDepth = 80;
     std::vector<int> tiles;
+
+    Texture2D stoneTexture;
+    Texture2D dirtTexture;
 };
 

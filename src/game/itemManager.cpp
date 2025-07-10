@@ -26,10 +26,10 @@ void ItemManager::Update(float deltaTime, World& world, Player& player) {
     }
 }
 
-void ItemManager::Render(float x, float y) { // camerax and y
+void ItemManager::Render(float x, float y, TextureManager& textureManager) { // camerax and y
     for (auto& item : items) {
         if (item.location == Item::DROPPED) {
-            item.RenderDropped(x, y);
+            item.RenderDropped(x, y, textureManager);
         }
     }
 }
