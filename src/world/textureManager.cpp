@@ -24,13 +24,13 @@ void TextureManager::WorldTextureManager(int tile, int camX, int camY, int tileP
     }
 }
 
-void TextureManager::ItemTextureManager(int tile, int camX, int camY, int xPos, int yPos, int size){
+void TextureManager::ItemTextureManager(int tile, int camX, int camY, int xPos, int yPos, int size, float hover){
     switch (tile) {
         case Item::BLOCK_STONE: 
-            m_RenderDroppedItem(stoneTexture, xPos, yPos, camX, camY, size);
+            m_RenderDroppedItem(stoneTexture, xPos, yPos, camX, camY, size, hover);
             break;
         case Item::BLOCK_DIRT: 
-            m_RenderDroppedItem(dirtTexture, xPos, yPos, camX, camY, size);
+            m_RenderDroppedItem(dirtTexture, xPos, yPos, camX, camY, size, hover);
             break;
     }
 }
@@ -42,11 +42,11 @@ void TextureManager::m_RenderBlock(Texture2D& texture, int tilePixelX, int tileP
     DrawTexturePro(texture, src, dest, origin, 0.0f, WHITE);
 }
 
-void TextureManager::m_RenderDroppedItem(Texture2D& texture, int xPos, int yPos, int camX, int camY, int size) {
+void TextureManager::m_RenderDroppedItem(Texture2D& texture, int xPos, int yPos, int camX, int camY, int size, float hover) {
     int offset = 2;
-    DrawRectangle((int)(xPos - camX) - offset, (int)(yPos- camY) + offset, (int)size, (int)size, BLACK);
+    DrawRectangle((int)(xPos - camX) - offset + hover, (int)(yPos- camY) + offset + hover, (int)size, (int)size, BLACK);
     Rectangle src = {0.0f, 0.0f, (float)texture.width, (float)texture.height};
-    Rectangle dest = {(float)(xPos - camX), (float)(yPos - camY), (float)size, (float)size};
+    Rectangle dest = {(float)(xPos - camX) + hover, (float)(yPos - camY) + hover, (float)size, (float)size};
     Vector2 origin = {0.0f, 0.0f};
     DrawTexturePro(texture, src, dest, origin, 0.0f, WHITE);
 }

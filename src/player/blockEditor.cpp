@@ -6,7 +6,7 @@ BlockEditor::BlockEditor(World& world, const GameCamera& camera)
     : world(world), camera(camera) {}
 
 void BlockEditor::Update(Player& player, ItemManager& itemManager) {
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
         int tileX, tileY;
         if (GetHoveredTile(tileX, tileY)) {
             double dist = findDistance(tileX, tileY, player.x / tileSize, player.y / tileSize);

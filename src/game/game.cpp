@@ -14,7 +14,7 @@ Game::Game()
 void Game::Update(float deltaTime) {
     player.Update(deltaTime, world);
     editor.Update(player, itemManager);
-    itemManager.Update(deltaTime, world, player);
+    itemManager.Update(deltaTime, world, player, camera.x, camera.y);
 
     camera.Follow(
         floorf(player.x),

@@ -16,6 +16,7 @@ public:
     float vy = 0;
     float gravity = 1200.0f;
     float maxFallSpeed = 10000.0f;
+    float phaseOffset = GetRandomValue(550, 628) / 150.0f;
     float size = 15.0f;
     double distanceToPlayer = 0;
 
@@ -50,4 +51,5 @@ public:
 private:
     void MoveDroppedTowardPlayer(float deltaTime, Player& player);
     void ApplyFriction(float deltaTime);
+    float m_HoverAnimation();
 };

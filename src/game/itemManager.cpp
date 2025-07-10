@@ -3,6 +3,7 @@
 #include <cstring>
 #include <iostream>
 #include <ostream>
+#include <raylib.h>
 
 void ItemManager::CreateDroppedItem(const char* name, float x, float y, Item::ItemRenderType texture) {
     Item item;
@@ -17,19 +18,23 @@ void ItemManager::CreateDroppedItem(const char* name, float x, float y, Item::It
     items.push_back(item);
 }
 
-void ItemManager::Update(float deltaTime, World& world, Player& player) {
+void ItemManager::Update(float deltaTime, World& world, Player& player, int camX, int camY) {
     for (auto& item : items) {
-        if (item.location == Item::DROPPED) {
-            item.UpdateDropped(deltaTime, world, player);
-            PickupItem(item, player);
+        if (item.xPos < camX + GetScreenWidth() && item.xPos > camX && item.yPos > camY && item.yPos < camY + GetScreenHeight()) {
+            if (item.location == Item::DROPPED) {
+                item.UpdateDropped(deltaTime, world, player);
+                PickupItem(item, player);
+            }
         }
     }
 }
 
-void ItemManager::Render(float x, float y, TextureManager& textureManager) { // camerax and y
+void ItemManager::Render(float camX, float camY, TextureManager& textureManager) { // camerax and y
     for (auto& item : items) {
-        if (item.location == Item::DROPPED) {
-            item.RenderDropped(x, y, textureManager);
+        if (item.xPos < camX + GetScreenWidth() && item.xPos > camX && item.yPos > camY && item.yPos < camY + GetScreenHeight()) {
+            if (item.location == Item::DROPPED) {
+                item.RenderDropped(camX, camY, textureManager);
+            }
         }
     }
 }

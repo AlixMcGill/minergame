@@ -1,4 +1,5 @@
 #include "item.hpp"
+#include <cmath>
 #include <iostream>
 #include <ostream>
 #include <raylib.h>
@@ -15,7 +16,7 @@ void Item::UpdateDropped(float deltaTime, World& world, Player& player) {
 }
 
 void Item::RenderDropped(float camDrawX, float camDrawY, TextureManager& textureManager) {
-    textureManager.ItemTextureManager(texture, camDrawX, camDrawY, xPos, yPos, size);
+    textureManager.ItemTextureManager(texture, camDrawX, camDrawY, xPos, yPos, size, m_HoverAnimation());
 }
 
 bool Item::IsCollidingAt(float px, float py, float w, float h, const World& world) const {
@@ -92,4 +93,12 @@ void Item::ApplyFriction(float deltaTime) {
     } else if (vy < 0.0f) {
         vy += friction * deltaTime;
     }
+}
+
+float Item::m_HoverAnimation() {
+    float amp = 1.5f;
+    float speed = 2.5f;
+    float time = GetTime();
+
+    return sinf(time * speed + phaseOffset) * amp;
 }
