@@ -6,11 +6,17 @@
 void TextureManager::Load() {
     m_LoadFilterTexture("graphics/blocks/Stone.png", stoneTexture);
     m_LoadFilterTexture("graphics/blocks/Dirt.png", dirtTexture);
+    m_LoadFilterTexture("graphics/blocks/Dirt_Grass.png", grassTexture);
+    m_LoadFilterTexture("graphics/blocks/Tree_Trunk.png", trunkTexture);
+    m_LoadFilterTexture("graphics/blocks/Tree_Leaves.png", leavesTexture);
 }
 
 void TextureManager::Unload() {
     UnloadTexture(stoneTexture);
     UnloadTexture(dirtTexture);
+    UnloadTexture(grassTexture);
+    UnloadTexture(trunkTexture);
+    UnloadTexture(leavesTexture);
 }
 
 void TextureManager::WorldTextureManager(int tile, int camX, int camY, int tilePixelX, int tilePixelY){
@@ -20,6 +26,15 @@ void TextureManager::WorldTextureManager(int tile, int camX, int camY, int tileP
             break;
         case World::TILE_DIRT: 
             m_RenderBlock(dirtTexture, tilePixelX, tilePixelY, camX, camY);
+            break;
+        case World::TILE_DIRT_GRASS: 
+            m_RenderBlock(grassTexture, tilePixelX, tilePixelY, camX, camY);
+            break;
+        case World::TILE_TREE_TRUNK: 
+            m_RenderBlock(trunkTexture, tilePixelX, tilePixelY, camX, camY);
+            break;
+        case World::TILE_TREE_LEAVES: 
+            m_RenderBlock(leavesTexture, tilePixelX, tilePixelY, camX, camY);
             break;
     }
 }
@@ -31,6 +46,12 @@ void TextureManager::ItemTextureManager(int tile, int camX, int camY, int xPos, 
             break;
         case Item::BLOCK_DIRT: 
             m_RenderDroppedItem(dirtTexture, xPos, yPos, camX, camY, size, hover);
+            break;
+        case Item::BLOCK_TREE_TRUNK: 
+            m_RenderDroppedItem(trunkTexture, xPos, yPos, camX, camY, size, hover);
+            break;
+        case Item::BLOCK_TREE_LEAVES: 
+            m_RenderDroppedItem(leavesTexture, xPos, yPos, camX, camY, size, hover);
             break;
     }
 }

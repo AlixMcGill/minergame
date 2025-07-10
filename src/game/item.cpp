@@ -72,13 +72,15 @@ void Item::MoveY(float dy, const World& world) {
 }
 
 void Item::MoveDroppedTowardPlayer(float deltaTime, Player& player) {
-    float moveSpeed = 0.2;
-    distanceToPlayer = findDistance(player.x + (tileSize / 2), player.y + tileSize, xPos, yPos);
-    Vector2 diff = diffVector(player.x, player.y, xPos, yPos);
+    if (player.itemInventory < player.itemMaxInventory) {
+        float moveSpeed = 0.2;
+        distanceToPlayer = findDistance(player.x + (tileSize / 2), player.y + tileSize, xPos, yPos);
+        Vector2 diff = diffVector(player.x, player.y, xPos, yPos);
 
-    if (distanceToPlayer <= player.itemPickupDistance) {
-        vx -= diff.x * moveSpeed;
-        vy -= diff.y * moveSpeed;
+        if (distanceToPlayer <= player.itemPickupDistance) {
+            vx -= diff.x * moveSpeed;
+            vy -= diff.y * moveSpeed;
+        }
     }
 }
 

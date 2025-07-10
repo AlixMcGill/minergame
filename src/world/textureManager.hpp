@@ -16,4 +16,7 @@ private:
 
     Texture2D stoneTexture;
     Texture2D dirtTexture;
+    Texture2D grassTexture;
+    Texture2D trunkTexture;
+    Texture2D leavesTexture;
 };

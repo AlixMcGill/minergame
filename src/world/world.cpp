@@ -27,6 +27,19 @@ int World::MapYToRadius(float y, int minRadius, int maxRadius) {
     return static_cast<int>(t * (maxRadius - minRadius)) + minRadius;
 }
 
+bool World::IsSolidTile(int tileX, int tileY) const {
+    if (tileX < 0 || tileY < 0 || tileX >= width || tileY >= height) return false;
+    int tile = tiles[tileY * width + tileX];
+    return tile == TILE_STONE || tile == TILE_DIRT || tile == TILE_DIRT_GRASS;
+}
+
+bool World::IsTile(int tileX, int tileY) const {
+    if (tileX < 0 || tileY < 0 || tileX >= width || tileY >= height) return false;
+    int tile = tiles[tileY * width + tileX];
+    return tile == TILE_STONE || tile == TILE_DIRT || tile == TILE_DIRT_GRASS || tile == TILE_TREE_TRUNK ||
+        tile == TILE_TREE_LEAVES;
+}
+
 void World::AddPerlinWorm(int startX, int startY, int length, float noiseScale, int minRadius, int maxRadius) {
     float posX = static_cast<float>(startX);
     float posY = static_cast<float>(startY);
@@ -90,11 +103,11 @@ void World::AddDirtPatches(float noiseScale, float threshold) {
 }
 
 void World::ClearTopRowsToAir(float scale) {
-    float bandScale = 0.03f;
+    float bandScale = 0.01f;
 
     for (int x = 0; x < width; x++) {
         float noiseVal = perlin.noise(x * scale, 0.01f * (float)(rand() % 2));
-        int clearHeight = mapNoiseToRange(noiseVal, 20, 50);
+        int clearHeight = mapNoiseToRange(noiseVal, 80, 180);
 
         float xBandNoise = perlin.noise(x * bandScale, 0.0f);
         int bandOffset = (int)((xBandNoise - 0.5f) * 20);
@@ -138,7 +151,7 @@ void World::InitBasicGen(float scale, float threshold) {
                 noiseVal /= maxAmplitude;
 
             float dirtNoiseVal = perlin.noise(x * 0.01f, 0.05f * (float)(rand() % 2));
-            int dirtHeight = mapNoiseToRange(dirtNoiseVal, 3, dirtDepth);
+            int dirtHeight = mapNoiseToRange(dirtNoiseVal, 70, dirtDepth);
 
             if (noiseVal > adjustedThreshold) {
                 if (y < dirtHeight) {
@@ -150,10 +163,141 @@ void World::InitBasicGen(float scale, float threshold) {
                 tiles[y * width + x] = TILE_AIR;
             }
 
-            float dirtNoiseVal2 = perlin.noise(x * 0.2f, 0.05f * (float)(rand() % 2));
-            int dirtHeight2 = mapNoiseToRange(dirtNoiseVal2, 30, 40);
+            float dirtNoiseVal2 = perlin.noise(x * 0.01f, 0.0001f * (float)(rand() % 2));
+            int dirtHeight2 = mapNoiseToRange(dirtNoiseVal2, 90, 120);
             if (y < dirtHeight2) {
                 tiles[y * width + x] = TILE_DIRT;
+            }
+        }
+    }
+}
+
+void World::AddGrass() {
+    for (int y = 5; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            if (at(x,y) == TILE_DIRT) {
+                bool enoughAirAbove = true;
+                int numOfAirAbove = 5;
+                for (int i = 1; i <= numOfAirAbove; i++) {
+                    if (at(x, y - i) != TILE_AIR) {
+                        enoughAirAbove = false;
+                        break;
+                    }
+                }
+                    if (enoughAirAbove) {
+                        at(x,y) = TILE_DIRT_GRASS;
+                    }
+            }
+        }
+    }
+}
+
+void World::DrawTileLine(int x0, int y0, int x1, int y1, int tileType) {
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy;
+
+    while (true) {
+        at(x0, y0) = tileType;
+
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
+
+bool World::CanPlaceFractalTree(int x, int y, float angle, float length, int depth) {
+    if (depth <= 0 || length < 1.0f) return true;
+
+    int x2 = (int)(x + cosf(angle) * length);
+    int y2 = (int)(y + sinf(angle) * length);
+
+    // Bresenham-style check from (x, y) to (x2, y2)
+    int dx = abs(x2 - x), sx = x < x2 ? 1 : -1;
+    int dy = -abs(y2 - y), sy = y < y2 ? 1 : -1;
+    int err = dx + dy;
+
+    int cx = x, cy = y;
+    while (true) {
+        if (IsSolidTile(cx, cy)) return false;
+
+        if (cx == x2 && cy == y2) break;
+        int e2 = 2 * err;
+        if (e2 >= dy) { err += dy; cx += sx; }
+        if (e2 <= dx) { err += dx; cy += sy; }
+    }
+
+    // Recurse to check branches
+    float newLength = length * 0.7f;
+    float angleOffset = 0.5f;
+
+    return CanPlaceFractalTree(x2, y2, angle - angleOffset, newLength, depth - 1) &&
+           CanPlaceFractalTree(x2, y2, angle + angleOffset, newLength, depth - 1);
+}
+
+void World::PlaceLeafCluster(int x, int y) {
+    // Offsets for a 3x3 block around (x,y)
+    static const int offsets[9][2] = {
+        {-1, -1}, {0, -1}, {1, -1},
+        {-1,  0}, {0,  0}, {1,  0},
+        {-1,  1}, {0,  1}, {1,  1}
+    };
+
+    for (auto& offset : offsets) {
+        int nx = x + offset[0];
+        int ny = y + offset[1];
+
+        // Bounds check
+        if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+
+        // Only place leaf if air
+        if (at(nx, ny) == TILE_AIR) {
+            at(nx, ny) = TILE_TREE_LEAVES;
+        }
+    }
+}
+
+
+void World::AddFractalTree(int x, int y, float angle, float length, int depth) {
+    if (depth <= 0 || length < 1.0f) {
+        PlaceLeafCluster(x, y);
+        return;
+    }
+
+    float x2 = x + cosf(angle) * length;
+    float y2 = y + sinf(angle) * length;
+
+    DrawTileLine(x, y, x2, y2, TILE_TREE_TRUNK);
+
+    float newLength = length * 0.7f;
+    float angleOffset = 0.5f;
+
+    AddFractalTree((int)x2, (int)y2, angle - angleOffset, newLength, depth - 1);
+    AddFractalTree((int)x2, (int)y2, angle + angleOffset, newLength, depth - 1);
+}
+
+void World::AddTrees() {
+    for (int y = 15; y < height; ++y) { // so we can safely look 15 tiles up
+        for (int x = 0; x < width; ++x) {
+            if (at(x, y) == TILE_DIRT_GRASS) {
+                // Check 15 air tiles above
+                bool allAboveAreAir = true;
+                for (int i = 1; i <= 15; ++i) {
+                    if (at(x, y - i) != TILE_AIR) {
+                        allAboveAreAir = false;
+                        break;
+                    }
+                }
+
+                // 15% chance
+                if (allAboveAreAir && (rand() % 100 < 15)) {
+                    float baseAngle = -PI / 2.0f; // straight up
+                    float angleVariance = ((rand() % 100) / 100.0f - 0.5f) * 0.3f; // random between -0.15 and +0.15
+                    float randomAngle = baseAngle + angleVariance;
+                    if (CanPlaceFractalTree(x, y - 1, randomAngle, 4.0f, 3))
+                    AddFractalTree(x, y - 1, randomAngle, 4.0f, 3); // spawn tree going up
+                }
             }
         }
     }
@@ -163,14 +307,11 @@ void World::GenerateTerrain() {
     InitBasicGen();
     AddRandWorms(12, 30);
     AddDirtPatches();
-    ClearTopRowsToAir();
+    ClearTopRowsToAir(0.00000000001);
+    AddGrass();
+    AddTrees();
 }
 
-bool World::IsSolidTile(int tileX, int tileY) const {
-    if (tileX < 0 || tileY < 0 || tileX >= width || tileY >= height) return false;
-    int tile = tiles[tileY * width + tileX];
-    return tile == TILE_STONE || tile == TILE_DIRT;
-}
 
 void World::Render(int camDrawX, int camDrawY, int windowWidth, int windowHeight, TextureManager& textureManager) {
     int camX = camDrawX;

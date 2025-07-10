@@ -36,7 +36,9 @@ public:
                            //
     enum ItemRenderType {
         BLOCK_STONE,
-        BLOCK_DIRT
+        BLOCK_DIRT,
+        BLOCK_TREE_TRUNK,
+        BLOCK_TREE_LEAVES,
     };
 
     ItemRenderType texture;

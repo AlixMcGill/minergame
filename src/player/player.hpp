@@ -6,8 +6,8 @@
 
 class Player {
 public:
-    float spawnX = 200;
-    float spawnY = 200;
+    float spawnX = 800;
+    float spawnY = 2500;
     float x = 0;
     float y = 0;
     float width = 22;
