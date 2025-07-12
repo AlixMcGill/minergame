@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <raylib.h>
 #include "../world/world.hpp"
 #include "../player/player.hpp"
@@ -19,6 +20,8 @@ public:
     float phaseOffset = GetRandomValue(550, 628) / 150.0f;
     float size = 15.0f;
     double distanceToPlayer = 0;
+    int itemWeight = 0;
+    uint64_t id;
 
     char chestID[64]; // if stored in a chest what chest its stored in
     int hotBarLocation;
@@ -26,7 +29,7 @@ public:
     enum ItemLocation { // all states of an item
         DROPPED,
         PLACED_IN_WORLD,
-        INVENTROY,
+        INVENTORY,
         HOTBAR,
         CHEST,
         DESTROY

@@ -3,6 +3,7 @@
 #include <random>
 #include <cmath>
 #include <raylib.h>
+#include <string>
 
 int mapNoiseToRange(float noiseValue, int min, int max);
 unsigned int generateRandomSeed();

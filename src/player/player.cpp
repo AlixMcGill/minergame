@@ -2,13 +2,20 @@
 #include "player.hpp"
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 #include <raylib.h>
 
 extern int tileSize;
 
-void Player::Init() {
+void Player::Init(const World& world) {
+    FindSpawn(world);
     x = spawnX;
     y = spawnY;
+    vy = 0;
+    vx = 0;
+    health = maxHealth;
+    isDead = false;
+    isOnGround = false;
 }
 
 void Player::Update(float deltaTime, const World& world) {
@@ -85,6 +92,7 @@ void Player::MoveY(float dy, const World& world) {
 }
 
 void Player::TakeDamage(int damage) {
+    std::cout << "Took Damage" << damage << std::endl;
     health -= damage;
     if (health <= 0) {
         health = 0;
@@ -93,11 +101,12 @@ void Player::TakeDamage(int damage) {
 }
 
 void Player::Respawn() {
-    Init();
+    x = spawnX;
+    y = spawnY;
     vx = vy = 0;
     isDead = false;
-    isOnGround = false;
-    health = 100;
+    isOnGround = true;
+    health = maxHealth;
 }
 
 bool Player::IsOnGroundWithTolerance(const World& world, float tolerance) const {
@@ -163,3 +172,14 @@ void Player::DebugDrawBounds(const GameCamera& cam) const {
     );
 }
 
+void Player::FindSpawn(const World& world) {
+    int middleX = world.getWidth() / 2;
+
+    for (int y = 0; y < world.getHeight(); y++) {
+        if (world.IsSolidTile(middleX, y)) {
+            spawnX = middleX * tileSize;
+            spawnY = (y - 4) * tileSize;
+            return;
+        }
+    }
+}

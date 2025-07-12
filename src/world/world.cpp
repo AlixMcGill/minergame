@@ -3,6 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cstdlib>
+#include <iostream>
 #include <raylib.h>
 #include "../util/perlin.hpp"
 #include "../util/utils.hpp"
@@ -304,11 +305,22 @@ void World::AddTrees() {
 }
 
 void World::GenerateTerrain() {
+    std::cout << "Initializing Generation..." << std::endl;
     InitBasicGen();
+
+    std::cout << "Adding random long caves." << std::endl;
     AddRandWorms(12, 30);
+
+    std::cout << "Adding dirt patches." << std::endl;
     AddDirtPatches();
+
+    std::cout << "Creating the surface." << std::endl;
     ClearTopRowsToAir(0.00000000001);
+
+    std::cout << "Adding grass." << std::endl;
     AddGrass();
+
+    std::cout << "Adding trees." << std::endl;
     AddTrees();
 }
 

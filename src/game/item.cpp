@@ -72,7 +72,7 @@ void Item::MoveY(float dy, const World& world) {
 }
 
 void Item::MoveDroppedTowardPlayer(float deltaTime, Player& player) {
-    if (player.itemInventory < player.itemMaxInventory) {
+    if (!player.inventoryFull) {
         float moveSpeed = 0.2;
         distanceToPlayer = findDistance(player.x + (tileSize / 2), player.y + tileSize, xPos, yPos);
         Vector2 diff = diffVector(player.x, player.y, xPos, yPos);

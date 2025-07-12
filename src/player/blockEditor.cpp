@@ -17,13 +17,13 @@ void BlockEditor::Update(Player& player, ItemManager& itemManager) {
                     int tileType = world.GetTileAtWorldPixel(tileX * tileSize, tileY * tileSize);
 
                     if (tileType == World::TILE_DIRT || tileType == World::TILE_DIRT_GRASS) {
-                        itemManager.CreateDroppedItem("Dirt", tileX * tileSize, tileY * tileSize, Item::BLOCK_DIRT);
+                        itemManager.CreateDroppedItem("Dirt", tileX * tileSize, tileY * tileSize, 1, Item::BLOCK_DIRT);
                     } else if (tileType == World::TILE_STONE) {
-                        itemManager.CreateDroppedItem("Stone", tileX * tileSize, tileY * tileSize, Item::BLOCK_STONE); 
+                        itemManager.CreateDroppedItem("Stone", tileX * tileSize, tileY * tileSize, 1, Item::BLOCK_STONE); 
                     } else if (tileType == World::TILE_TREE_TRUNK) {
-                        itemManager.CreateDroppedItem("Wood", tileX * tileSize, tileY * tileSize, Item::BLOCK_TREE_TRUNK); 
+                        itemManager.CreateDroppedItem("Wood", tileX * tileSize, tileY * tileSize, 1, Item::BLOCK_TREE_TRUNK); 
                     } else if (tileType == World::TILE_TREE_LEAVES) {
-                        itemManager.CreateDroppedItem("Leaves", tileX * tileSize, tileY * tileSize, Item::BLOCK_TREE_LEAVES); 
+                        itemManager.CreateDroppedItem("Leaves", tileX * tileSize, tileY * tileSize, 1, Item::BLOCK_TREE_LEAVES); 
                     }
 
                     world.at(tileX, tileY) = World::TILE_AIR; // Change destroyed tile to air

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../player/player.hpp"
+#include "../player/inventory.hpp"
 #include "../world/world.hpp"
 #include "../world/textureManager.hpp"
 #include "../util/globals.hpp"
@@ -18,6 +19,7 @@ public:
 private:
     World world;
     Player player;
+    Inventory inventory;
     GameCamera camera;
     BlockEditor editor;
     ItemManager itemManager;

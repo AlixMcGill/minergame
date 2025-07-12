@@ -50,9 +50,9 @@ private:
     int MapYToRadius(float y, int minRadius, int maxRadius);
     PerlinNoise perlin;
 
-    static constexpr int width = 1800;
-    static constexpr int height = 800;
-    static constexpr int dirtDepth = 200;
+    static constexpr int width = 800;
+    static constexpr int height = 2000;
+    static constexpr int dirtDepth = 400;
     std::vector<int> tiles;
 
     Texture2D stoneTexture;
