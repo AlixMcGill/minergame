@@ -59,7 +59,7 @@ void ItemManager::Render(float camX, float camY, TextureManager& textureManager)
 
 bool ItemManager::PickupItem(Item& item, Player& player, Inventory& inventory) {
     player.inventoryFull = inventory.IsInventoryFull();
-    if (item.distanceToPlayer <= player.itemGrabDistance && !inventory.IsInventoryFull()) {
+    if (item.distanceToPlayer <= player.itemGrabDistance && !inventory.IsInventoryFull() && !item.ignorePickup) {
         item.location = Item::INVENTORY;
         inventory.AddItemToInventory(item);
         return true;

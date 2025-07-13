@@ -1,4 +1,3 @@
-#pragma once
 #include "player.hpp"
 #include <cmath>
 #include <algorithm>
@@ -15,10 +14,15 @@ void Player::Init(const World& world) {
     vx = 0;
     health = maxHealth;
     isDead = false;
-    isOnGround = false;
+    isOnGround = true;
+    ignoreFallDamage = true;
+    fallDamageTimer = 0.0;
+    StartFallDamageTimer(1.5f);
 }
 
 void Player::Update(float deltaTime, const World& world) {
+    IgnoreFallDamage(deltaTime);
+
     if (isDead && IsKeyPressed(KEY_R)) {
         Respawn();
     } else if (isDead) {
@@ -27,8 +31,14 @@ void Player::Update(float deltaTime, const World& world) {
     if (IsKeyPressed(KEY_R)) Respawn(); // For Testing Only
     
     vx = 0;
-    if (IsKeyDown(KEY_A)) vx = -speed;
-    if (IsKeyDown(KEY_D)) vx = speed;
+    if (IsKeyDown(KEY_A)) {
+        faceDir = false;
+        vx = -speed;
+    }
+    if (IsKeyDown(KEY_D)) {
+        faceDir = true;
+        vx = speed;
+    }
 
     if ((isOnGround || IsOnGroundWithTolerance(world)) && IsKeyPressed(KEY_SPACE)) {
         vy = -600.0f;
@@ -40,7 +50,7 @@ void Player::Update(float deltaTime, const World& world) {
 
     MoveX(vx * deltaTime, world);
     MoveY(vy * deltaTime, world);
-
+    //std::cout << "x: " << x << " y: " << y << " vx: " << vx << " vy: " << vy << std::endl;
 }
 
 void Player::MoveX(float dx, const World& world) {
@@ -74,7 +84,7 @@ void Player::MoveY(float dy, const World& world) {
             y -= move;
 
             // Fall Damage
-            if (dy > 0 && preCollisionVy > safeFallSpeed) {
+            if (dy > 0 && preCollisionVy > safeFallSpeed && !ignoreFallDamage) {
                 int damage = static_cast<int>((preCollisionVy - safeFallSpeed) * fallSpeedDamageScale);
                 if (preCollisionVy > (safeFallSpeed * 2)) damage = maxHealth;
                 TakeDamage(damage);
@@ -89,6 +99,24 @@ void Player::MoveY(float dy, const World& world) {
     }
 
     isOnGround = false;
+}
+
+void Player::IgnoreFallDamage(float deltaTime) {
+    if (ignoreFallDamageTimerStarted && ignoreFallDamage) {
+        std::cout << "FallDamageTimer: " << fallDamageTimer << std::endl;
+        fallDamageTimer += deltaTime;
+        if (fallDamageTimer >= timeToIgnoreFallDamage) {
+            ignoreFallDamage = false;
+            ignoreFallDamageTimerStarted = false;
+        }
+    }
+}
+
+void Player::StartFallDamageTimer(float time) {
+    ignoreFallDamage = true;
+    ignoreFallDamageTimerStarted = true;
+    timeToIgnoreFallDamage = time;
+    fallDamageTimer = 0.0f;
 }
 
 void Player::TakeDamage(int damage) {
@@ -107,6 +135,7 @@ void Player::Respawn() {
     isDead = false;
     isOnGround = true;
     health = maxHealth;
+    StartFallDamageTimer(2.0f);
 }
 
 bool Player::IsOnGroundWithTolerance(const World& world, float tolerance) const {
@@ -132,7 +161,13 @@ bool Player::IsColliding(const World& world) const {
 }
 
 void Player::Draw(int camDrawX, int camDrawY) const {
-    DrawRectangle((int)(x - camDrawX), (int)(y - camDrawY), (int)width, (int)height, RED);
+    Color playerColor;
+    if (ignoreFallDamage) {
+        playerColor = GREEN; 
+    } else {
+        playerColor = RED;
+    }
+    DrawRectangle((int)(x - camDrawX), (int)(y - camDrawY), (int)width, (int)height, playerColor);
 }
 
 void Player::DrawUI() {

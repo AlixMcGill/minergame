@@ -34,10 +34,17 @@ public:
     int itemGrabDistance = 30; // distance to when the item moves into player inventory
     bool inventoryFull = false;
 
+    bool ignoreFallDamage = false;
+    bool ignoreFallDamageTimerStarted = false;
+    float timeToIgnoreFallDamage = 0.0f;
+    float fallDamageTimer = 0.0f;
+
     void Init(const World& world);
     void Update(float deltaTime, const World& world);
     void MoveX(float dx, const World& world);
     void MoveY(float dy, const World& world);
+    void IgnoreFallDamage(float deltaTime);
+    void StartFallDamageTimer(float time);
     void TakeDamage(int damage);
     void Respawn();
 

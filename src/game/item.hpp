@@ -26,6 +26,11 @@ public:
     char chestID[64]; // if stored in a chest what chest its stored in
     int hotBarLocation;
 
+    bool ignorePickup = false;
+    bool ignorePickupTimerStarted = false;
+    float ignorePickupTimer = 0.0f;
+    float timeToIgnorePickup = 0.0f;
+
     enum ItemLocation { // all states of an item
         DROPPED,
         PLACED_IN_WORLD,
@@ -50,6 +55,8 @@ public:
     bool IsColliding(const World& world) const;
     void MoveX(float dx, const World& world);
     void MoveY(float dy, const World& world);
+    void SetIgnorePickupTimer(float time);
+    void IgnorePickup(float deltaTime);
     
     void UpdateDropped(float deltaTime, World& world, Player& player);
     void RenderDropped(float x, float y, TextureManager& textureManager);

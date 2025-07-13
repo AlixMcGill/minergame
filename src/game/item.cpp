@@ -13,6 +13,7 @@ void Item::UpdateDropped(float deltaTime, World& world, Player& player) {
     MoveY(vy * deltaTime, world);
     MoveDroppedTowardPlayer(deltaTime, player);
     ApplyFriction(deltaTime);
+    IgnorePickup(deltaTime);
 }
 
 void Item::RenderDropped(float camDrawX, float camDrawY, TextureManager& textureManager) {
@@ -77,7 +78,7 @@ void Item::MoveDroppedTowardPlayer(float deltaTime, Player& player) {
         distanceToPlayer = findDistance(player.x + (tileSize / 2), player.y + tileSize, xPos, yPos);
         Vector2 diff = diffVector(player.x, player.y, xPos, yPos);
 
-        if (distanceToPlayer <= player.itemPickupDistance) {
+        if (distanceToPlayer <= player.itemPickupDistance && !ignorePickup) {
             vx -= diff.x * moveSpeed;
             vy -= diff.y * moveSpeed;
         }
@@ -94,6 +95,24 @@ void Item::ApplyFriction(float deltaTime) {
         vy -= friction * deltaTime;
     } else if (vy < 0.0f) {
         vy += friction * deltaTime;
+    }
+}
+
+void Item::SetIgnorePickupTimer(float time) {
+    ignorePickup = true;
+    ignorePickupTimerStarted = true;
+    ignorePickupTimer = 0.0f;
+    timeToIgnorePickup = time;
+}
+
+void Item::IgnorePickup(float deltaTime) {
+    if (ignorePickupTimerStarted && ignorePickup) {
+        ignorePickupTimer += deltaTime;
+        if (ignorePickupTimer >= timeToIgnorePickup) {
+            ignorePickup = false;
+            ignorePickupTimerStarted = false;
+            ignorePickupTimer = 0.0f;
+        }
     }
 }
 

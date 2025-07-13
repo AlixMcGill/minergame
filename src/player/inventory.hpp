@@ -16,7 +16,7 @@ public:
     float maxWeight = 600;
     int hoveredItemIndex = -1;
     int dropRepeatCounter = 0;
-    int dropRepeatDelay = 10;
+    int dropRepeatDelay = 25;
    
     void Update(Player& player);
     void Draw();
@@ -29,5 +29,5 @@ public:
 private:
     int scrollOffset = 0;
     const int maxVisibleLines = 20;
-    const int lineHeight = 20;
+    const int lineHeight = 28;
 };

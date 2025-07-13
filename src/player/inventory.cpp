@@ -57,7 +57,7 @@ void Inventory::Draw() {
     DrawText("Inventory:", x, panelY + 5, 20, YELLOW);
 
     if (inventory.empty()) {
-        DrawText("  (Empty)", x, y, 20, LIGHTGRAY);
+        DrawText("  (Empty)", x, y + 10, 20, LIGHTGRAY);
         return;
     }
 
@@ -189,22 +189,23 @@ void Inventory::DropOneItemAtGroupedIndex(int groupedIndex, Player& player) {
         Item dropItem = inventory[dropIndex];
         
         int place = 30;
-        int xspeed = 300;
+        int xspeed = 600;
         if (player.faceDir) {
-            place = 30;
-            xspeed = 300;
+            place = place;
+            xspeed = xspeed;
         } else {
-            place = -30;
-            xspeed = -300;
+            place = -place;
+            xspeed = -xspeed;
         }
 
         // Adjust inventory state
         currentWeight -= dropItem.itemWeight;
-        dropItem.xPos = player.x + 30;
+        dropItem.xPos = player.x + place;
         dropItem.yPos = player.y;
-        dropItem.vx = 800;
+        dropItem.vx = xspeed;
         dropItem.vy = -300;
         dropItem.location = Item::DROPPED;
+        dropItem.SetIgnorePickupTimer(2.0f);
 
         ItemManager::AddItemToWorld(std::move(dropItem));
         inventory.erase(inventory.begin() + dropIndex);
